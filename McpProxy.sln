@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36121.58 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McpProxy", "McpProxy\McpProxy.csproj", "{478A2285-8FFC-40AA-BBAC-2E675DCADBE8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAPI-MCP-Proxy", "OpenAPI-MCP-Proxy\OpenAPI-MCP-Proxy.csproj", "{B8C5A3E2-7FFC-41AA-BBAC-3E675DCADBE9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{478A2285-8FFC-40AA-BBAC-2E675DCADBE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{478A2285-8FFC-40AA-BBAC-2E675DCADBE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{478A2285-8FFC-40AA-BBAC-2E675DCADBE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8C5A3E2-7FFC-41AA-BBAC-3E675DCADBE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8C5A3E2-7FFC-41AA-BBAC-3E675DCADBE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8C5A3E2-7FFC-41AA-BBAC-3E675DCADBE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8C5A3E2-7FFC-41AA-BBAC-3E675DCADBE9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
