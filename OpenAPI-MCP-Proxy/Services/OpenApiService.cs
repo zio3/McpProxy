@@ -17,6 +17,7 @@ public class OpenApiService
     public OpenApiService(string toolPrefix = "")
     {
         _httpClient = new HttpClient();
+        _httpClient.Timeout = TimeSpan.FromSeconds(10); // Set reasonable timeout
         _toolPrefix = toolPrefix;
     }
 

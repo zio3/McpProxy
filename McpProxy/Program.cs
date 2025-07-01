@@ -76,11 +76,19 @@ try
         }
 
         // プロセスを終了
-        if (!process.HasExited)
-        {
-            process.Kill();
-            await process.WaitForExitAsync();
-        }
+try
+{
+if (!process.HasExited)
+{
+process.Kill();
+}
+await process.WaitForExitAsync();
+}
+catch (InvalidOperationException)
+{
+// プロセスが既に終了している場合は無視
+Console.Error.WriteLine("Process already exited");
+}
     }
 }
 catch (Exception ex)

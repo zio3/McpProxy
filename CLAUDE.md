@@ -1,6 +1,17 @@
-# CLAUDE.md
+﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 📚 Development Guidelines Reference
+
+### メインガイドライン
+- **統合ガイドライン**: https://gist.githubusercontent.com/zio3/20d171adf94bd3311498c5af428da13c/raw/claude-guidelines.md
+
+### 言語別ガイドライン
+- **C#開発**: https://gist.githubusercontent.com/zio3/ee07e8930437ca559f211f53824094f4/raw/claude-csharp-guidelines.md
+
+### 外部ガイドライン読み込み方法
+外部ガイドラインにアクセスは、MCP CURLを使用してください：
 
 ## Project Overview
 

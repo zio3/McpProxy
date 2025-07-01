@@ -49,16 +49,31 @@ class Program
             // Initialize services
             var openApiService = new OpenApiService(toolPrefix);
             var httpProxyService = new HttpProxyService();
-            var mcpService = new McpService(openApiService, httpProxyService);
+            var cacheService = new CacheService();
+            var mcpService = new McpService(openApiService, httpProxyService, cacheService, openApiUrl);
 
-            // Load OpenAPI specification
+            // Try to load OpenAPI specification
             Console.Error.WriteLine($"Loading OpenAPI specification from: {openApiUrl}");
             if (!string.IsNullOrEmpty(toolPrefix))
             {
                 Console.Error.WriteLine($"Using tool prefix: {toolPrefix}");
             }
-            await openApiService.LoadSpecificationAsync(openApiUrl);
-            Console.Error.WriteLine("OpenAPI specification loaded successfully");
+            
+            try
+            {
+                await openApiService.LoadSpecificationAsync(openApiUrl);
+                Console.Error.WriteLine("OpenAPI specification loaded successfully");
+            }
+            catch (HttpRequestException)
+            {
+                Console.Error.WriteLine("Warning: Failed to load OpenAPI specification. Starting in offline mode.");
+                // Check if cache exists
+                if (!cacheService.CacheExists(openApiUrl))
+                {
+                    Console.Error.WriteLine("Error: No cache file found. Cannot start in offline mode.");
+                    Environment.Exit(1);
+                }
+            }
 
             // Run MCP service
             await mcpService.RunAsync();

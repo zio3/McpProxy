@@ -7,13 +7,18 @@ public class McpService
 {
     private readonly OpenApiService _openApiService;
     private readonly HttpProxyService _httpProxyService;
+    private readonly CacheService _cacheService;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly string _openApiUrl;
     private List<Tool> _tools = new();
+    private OperationMode _currentMode = OperationMode.Online;
 
-    public McpService(OpenApiService openApiService, HttpProxyService httpProxyService)
+    public McpService(OpenApiService openApiService, HttpProxyService httpProxyService, CacheService cacheService, string openApiUrl)
     {
+        _cacheService = cacheService;
         _openApiService = openApiService;
         _httpProxyService = httpProxyService;
+        _openApiUrl = openApiUrl;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -84,10 +89,33 @@ public class McpService
         }
     }
 
-    private Task<McpResponse> HandleInitializeAsync(McpRequest request)
+    private async Task<McpResponse> HandleInitializeAsync(McpRequest request)
     {
-        // Generate tools after initialization
-        _tools = _openApiService.GenerateTools();
+        // Try to generate tools online, fall back to cache if offline
+        try
+        {
+            _tools = _openApiService.GenerateTools();
+            _currentMode = OperationMode.Online;
+            // Save to cache for offline use
+            await _cacheService.SaveToolsCacheAsync(_openApiUrl, _tools);
+        }
+        catch (HttpRequestException)
+        {
+            // Switch to offline mode and try to load from cache
+            var previousMode = _currentMode;
+            _currentMode = OperationMode.Offline;
+            Console.Error.WriteLine($"[INFO] Operation mode changed: {previousMode} -> {_currentMode}");
+            
+            var cachedTools = await _cacheService.LoadToolsCacheAsync(_openApiUrl);
+            if (cachedTools != null)
+            {
+                _tools = cachedTools;
+            }
+            else
+            {
+                _tools = new List<Tool>();
+            }
+        }
 
         var initParams = request.Params != null
             ? JsonSerializer.Deserialize<InitializeRequest>(JsonSerializer.Serialize(request.Params), _jsonOptions)
@@ -107,19 +135,50 @@ public class McpService
             }
         };
 
-        return Task.FromResult(new McpResponse
+        return new McpResponse
         {
             Id = request.Id,
             Result = response
-        });
+        };
     }
 
     private McpResponse HandleToolsList(McpRequest request)
     {
-        // If tools haven't been generated yet, generate them now
+        // If tools haven't been generated yet, try to generate or load from cache
         if (_tools.Count == 0)
         {
-            _tools = _openApiService.GenerateTools();
+            if (_currentMode == OperationMode.Online)
+            {
+                try
+                {
+                    _tools = _openApiService.GenerateTools();
+                    // Save to cache asynchronously
+                    Task.Run(async () => await _cacheService.SaveToolsCacheAsync(_openApiUrl, _tools));
+                }
+                catch (HttpRequestException)
+                {
+                    // Switch to offline mode
+                    var previousMode = _currentMode;
+                    _currentMode = OperationMode.Offline;
+                    Console.Error.WriteLine($"[INFO] Operation mode changed: {previousMode} -> {_currentMode}");
+                    
+                    // Try to load from cache
+                    var cachedTools = _cacheService.LoadToolsCacheAsync(_openApiUrl).GetAwaiter().GetResult();
+                    if (cachedTools != null)
+                    {
+                        _tools = cachedTools;
+                    }
+                }
+            }
+            else
+            {
+                // Offline mode - try to load from cache
+                var cachedTools = _cacheService.LoadToolsCacheAsync(_openApiUrl).GetAwaiter().GetResult();
+                if (cachedTools != null)
+                {
+                    _tools = cachedTools;
+                }
+            }
         }
         
         return new McpResponse
@@ -162,7 +221,16 @@ public class McpService
             Console.Error.WriteLine($"[DEBUG] URL: {url}");
             Console.Error.WriteLine($"[DEBUG] Body: {JsonSerializer.Serialize(body, _jsonOptions)}");
             
-            var result = await _httpProxyService.ExecuteRequestAsync(method, url, body);
+            // Pass the current mode and callback for mode changes
+            var result = await _httpProxyService.ExecuteRequestAsync(method, url, body, _currentMode, (newMode) => 
+            {
+                if (_currentMode != newMode)
+                {
+                    var previousMode = _currentMode;
+                    _currentMode = newMode;
+                    Console.Error.WriteLine($"[INFO] Operation mode changed: {previousMode} -> {_currentMode}");
+                }
+            });
 
             // Check if result contains an error
             var isError = false;
